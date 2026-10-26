@@ -26,7 +26,7 @@ E um quinto recurso: **`/novo-modelo`**, que treina um formato novo a partir de 
 ## Requisitos
 
 **Computador**
-- Windows 10 ou 11 (64 bits), **ou** macOS 13 ou mais novo (Apple Silicon testado; Intel não testado), com o [Homebrew](https://brew.sh) instalado.
+- Windows 10 ou 11 (64 bits), **ou** macOS 13 ou mais novo (Apple Silicon testado; Intel não testado); o instalador do Mac oferece instalar o [Homebrew](https://brew.sh) se ele faltar.
 - ~10 GB livres (programas, modelos de transcrição e pacotes). Cada projeto de vídeo ocupa mais 1 a 5 GB.
 - 8 GB de RAM no mínimo. Com 8 GB, renderize um vídeo por vez.
 - Internet (instalação, fontes do vídeo, bancos de imagem).
@@ -51,7 +51,7 @@ Detalhes em [docs/03-IMAGENS-E-BROLL.md](docs/03-IMAGENS-E-BROLL.md).
    ```
    (Sem terminal? Use o GitHub Desktop ou peça ao Claude Code. Passo a passo em [docs/01-INSTALAR.md](docs/01-INSTALAR.md).)
 2. **Dê duplo clique em `00_SISTEMA\instalacao\INSTALAR.bat`.** Ele instala Node.js, FFmpeg e os pacotes, baixa os modelos e confere tudo. Leva de 15 a 40 minutos, conforme a internet.
-   **No Mac:** na raiz do repositório, rode `bash 00_SISTEMA/instalacao/instalar.sh` (ou dê duplo clique em `00_SISTEMA/instalacao/INSTALAR.command`). Passo a passo, Homebrew e problemas comuns: [docs/01-INSTALAR-MAC.md](docs/01-INSTALAR-MAC.md).
+   **No Mac:** na raiz do repositório, rode `bash 00_SISTEMA/instalacao/instalar.sh` (ou dê duplo clique em `00_SISTEMA/instalacao/INSTALAR.command`). Se faltar o Homebrew, ele pergunta `s/N` antes de instalar (ou use `--instalar-homebrew` sem terminal). Passo a passo e problemas comuns: [docs/01-INSTALAR-MAC.md](docs/01-INSTALAR-MAC.md).
 3. **Preencha o que o instalador abrir no Bloco de Notas:** as chaves de API (opcionais, `.env`) e a sua marca (`marca.json`). No Mac o instalador não abre nada: abra o `.env` e o `marca.json` você mesmo com `open -e 00_SISTEMA/motor/.env` e `open -e 02_BIBLIOTECA/kit/marca/marca.json`. No fim aparece uma tabela OK/FALTA.
 
 ## Como usar (3 passos)

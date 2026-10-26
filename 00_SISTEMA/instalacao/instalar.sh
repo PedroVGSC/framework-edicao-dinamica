@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 # Instalador do Framework de Edição Dinâmica para macOS (Apple Silicon ou Intel). Equivalente do instalar.ps1.
 # Pode rodar quantas vezes quiser: o que já está certo é pulado.
-# Uso (na raiz do repositório):  bash 00_SISTEMA/instalacao/instalar.sh [--sem-opcionais]
+# Uso (na raiz do repositório):  bash 00_SISTEMA/instalacao/instalar.sh [--sem-opcionais] [--instalar-homebrew]
 set -u
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 RAIZ="$(cd "$AQUI/../.." && pwd)"
 MOTOR="$RAIZ/00_SISTEMA/motor"
 DEP="$AQUI/dependencias.json"
-SEM_OPC=0; [ "${1:-}" = "--sem-opcionais" ] && SEM_OPC=1
+SEM_OPC=0; SIM_BREW=0
+for a in "$@"; do
+	case "$a" in
+		--sem-opcionais) SEM_OPC=1;;
+		--instalar-homebrew) SIM_BREW=1;;
+		*) echo "Uso: bash instalar.sh [--sem-opcionais] [--instalar-homebrew]" >&2; exit 2;;
+	esac
+done
 RES=(); FALTAS=0
 
 # Homebrew no PATH mesmo em shell sem profile (Apple Silicon e Intel)
@@ -31,15 +38,36 @@ baixar() { # url destino [sha256 esperado]. Baixa para destino.baixando e só mo
 	mv "$2.baixando" "$2"
 }
 
+BREW_CMD='/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+instalar_homebrew() { # só instala com consentimento: pergunta s/N num terminal, ou --instalar-homebrew. Retorno: 0 brew no PATH, 1 sem brew
+	local r=""
+	if [ $SIM_BREW = 0 ] && [ -t 0 ]; then
+		read -r -p "Homebrew não encontrado. Instalar agora com o instalador oficial (https://brew.sh)? Ele pede a senha do Mac e as Xcode Command Line Tools [s/N] " r
+		case "$r" in s|S|sim|SIM) SIM_BREW=2;; esac
+	fi
+	if [ $SIM_BREW = 0 ]; then
+		nota brew FALTA "instale o Homebrew (https://brew.sh; ele pede as Xcode Command Line Tools) com o comando oficial: $BREW_CMD e rode este instalador de novo (ou use --instalar-homebrew)"
+		return 1
+	fi
+	if [ $SIM_BREW = 1 ]; then NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+	else /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi
+	eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
+	if ! tem brew; then nota brew FALTA "o instalador do Homebrew não terminou (sem internet, sem senha de administrador ou cancelado): rode este instalador de novo"; return 1; fi
+	nota brew OK "Homebrew instalado"
+	local bp=/opt/homebrew; [ "$(uname -m)" = arm64 ] || bp=/usr/local
+	echo "   Para o brew valer em todo Terminal novo, rode estas 2 linhas (o instalador não faz isso por você):"
+	echo "     echo 'eval \"\$($bp/bin/brew shellenv)\"' >> ~/.zprofile"
+	echo "     eval \"\$($bp/bin/brew shellenv)\""
+}
+
 echo "Framework de Edição Dinâmica: $RAIZ"
 [ "$(uname -s)" = Darwin ] || echo "   Atenção: este instalador foi feito para macOS; no Linux veja docs/07-LINUX.md."
 case "$RAIZ" in *"/Library/Mobile Documents/"*|*"/Dropbox/"*|*"/Google Drive/"*|*"/OneDrive"*) echo "   Atenção: pasta sincronizada na nuvem; o render trava arquivos. Prefira ~/Projetos.";; esac
 
 # 1. Programas (Homebrew) -------------------------------------------------------------------------------------------
 passo "Programas (Homebrew): Node.js 24, FFmpeg, Git e yt-dlp"
-if ! tem brew; then
-	nota brew FALTA 'instale o Homebrew (https://brew.sh; ele pede as Xcode Command Line Tools) com o comando oficial: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" e rode este instalador de novo'
-else
+if ! tem brew; then instalar_homebrew; fi
+if tem brew; then
 	# sem node não dá para ler o dependencias.json: instala o node primeiro (única fórmula fixa aqui)
 	if ! tem node; then echo "   instalando node@24..."; brew install node@24; brew link --overwrite --force node@24 >/dev/null 2>&1; fi
 	# se o comando já existe (ex.: node pelo fnm/nvm), não reinstala

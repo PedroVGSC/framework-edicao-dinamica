@@ -5,20 +5,20 @@ Equivalente do [01-INSTALAR.md](01-INSTALAR.md) (Windows) para **macOS** (Apple 
 ## Antes de começar
 
 - macOS 13 ou mais novo, ~10 GB livres, 8 GB de RAM ou mais.
-- [Homebrew](https://brew.sh) instalado (veja abaixo).
+- Homebrew não é pré-requisito: se faltar, o instalador oferece instalar (veja abaixo).
 - Pasta do repositório **fora** de iCloud Drive, Dropbox e Google Drive (ex.: `~/Projetos/...`).
 
 **O que foi testado.** Apple Silicon (arm64) com macOS 27. **Mac Intel e macOS 13 a 26 não foram testados**: o instalador tem o caminho para Intel (`compositor-darwin-x64`, DeepFilterNet `x86_64-apple-darwin`), mas ninguém confirmou que funciona. Se algo falhar, a tabela final do instalador diz o que e onde.
 
 ### Homebrew e Xcode Command Line Tools
 
-Sem o Homebrew, o instalador para na linha `brew` com FALTA e mostra este mesmo comando. Instale pelo comando oficial (do [brew.sh](https://brew.sh)), cole no Terminal:
+Sem o Homebrew, o instalador pergunta `Instalar agora com o instalador oficial? [s/N]` e só instala se você responder `s`. Sem terminal interativo, `--instalar-homebrew` autoriza a instalação; sem pergunta e sem a flag, ele não instala nada: para na linha `brew` com FALTA e mostra o comando oficial (do [brew.sh](https://brew.sh)), que você também pode colar no Terminal:
 
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-Ele pede as **Xcode Command Line Tools** (se faltarem) e a senha do Mac, e leva alguns minutos. No fim, siga as instruções que ele imprime para pôr o `brew` no PATH (em Apple Silicon fica em `/opt/homebrew/bin`). Depois rode o instalador do framework de novo.
+Ele pede as **Xcode Command Line Tools** (se faltarem) e a senha do Mac, e leva alguns minutos. Quando o instalador do framework o executa, o `brew` já vale no resto da instalação, e ele imprime 2 linhas para você deixá-lo permanente no `~/.zprofile` (em Apple Silicon fica em `/opt/homebrew/bin`). Se instalar à mão, siga as instruções que o Homebrew imprime e rode o instalador do framework de novo.
 
 ### Confira a pasta do repositório
 
@@ -32,7 +32,7 @@ Na raiz do repositório:
 bash 00_SISTEMA/instalacao/instalar.sh
 ```
 
-(ou duplo clique em `00_SISTEMA/instalacao/INSTALAR.command`; na 1ª vez, botão direito → Abrir). Pode rodar quantas vezes quiser: o que já está certo é pulado. `--sem-opcionais` pula yt-dlp e os modelos RNNoise/Silero.
+(ou duplo clique em `00_SISTEMA/instalacao/INSTALAR.command`; na 1ª vez, botão direito → Abrir). Pode rodar quantas vezes quiser: o que já está certo é pulado. `--sem-opcionais` pula yt-dlp e os modelos RNNoise/Silero; `--instalar-homebrew` autoriza instalar o Homebrew sem perguntar (as duas flags combinam em qualquer ordem).
 
 O que ele faz: confere/instala Node.js 24, FFmpeg 9 (o do Homebrew já tem os filtros `whisper` e `arnndn`), Git e yt-dlp; cria as pastas vazias; `npm ci` no motor (Remotion 4.0.532 travado); baixa o navegador do Remotion; baixa os modelos do Whisper (~1 GB, sha256 conferido) e o DeepFilterNet 0.5.6 para Mac; gera os efeitos sonoros e os substitutos; cria o `.env`; confere tudo e mostra a tabela **OK / AVISO / FALTA**.
 
