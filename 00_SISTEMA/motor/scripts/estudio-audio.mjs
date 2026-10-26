@@ -18,7 +18,7 @@ const RAIZ = path.resolve(MOTOR, '..', '..');
 const args = process.argv.slice(2);
 const proj = path.resolve(args[0] ?? '');
 const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
-const DFN = path.resolve(MOTOR, '..', 'ferramentas', 'deepfilternet', 'deep-filter.exe');
+const DFN = path.resolve(MOTOR, '..', 'ferramentas', 'deepfilternet', process.platform === 'win32' ? 'deep-filter.exe' : 'deep-filter');
 const R = (...p) => path.join(proj, ...p);
 const bruto = R('01_bruto', fs.readdirSync(R('01_bruto')).find((f) => /^bruto\./.test(f)));
 // Voz de referência (o timbre que o usuário aprovou): --referencia <arquivo>; sem ele, o 1º áudio/vídeo da pasta

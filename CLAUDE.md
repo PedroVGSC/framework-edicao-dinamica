@@ -271,7 +271,8 @@ Provam que os formatos aprovados continuam iguais: renderizam trechos fixos do p
 - **Caminhos dentro de filtros do FFmpeg:** use caminhos relativos (sem `C:`). O `drawtext` precisa de `fontfile` (sem fontconfig no Windows).
 - **O render copia a pasta inteira do projeto** para o pacote (no Windows o Remotion não usa link simbólico). Versões antigas do final dentro de `07_final/` e candidatos de B-roll não usados (500 MB–1 GB) atrasam todo render e prévia: guarde-os em `03_PROJETOS/_versoes-antigas/<projeto>/`.
 - **HEVC 10 bits** (comum em "arquivo leve" de câmera) decodifica só na CPU: o `preparar.mjs` levou 35 min (0,09×) num bruto 4K de 3 min. Dica para o usuário: exportar em H.264 8 bits, 24 fps, 1080×1920 ou 2160×3840 elimina essa etapa. Bruto 1440×2560 a 30 fps: `preparar.mjs --cor nenhuma` mantém resolução e fps e só recodifica.
-- Linux e macOS: diferenças e pendências em `docs/07-LINUX.md`.
+- **macOS:** instalador `00_SISTEMA/instalacao/instalar.sh` e guia `docs/01-INSTALAR-MAC.md`. Fonte dos rótulos em `scripts/lib/fonte.mjs`; sem contorno de binários (`binarios.mjs` só age no Windows); `deep-filter` sem `.exe`. Regressões: gravar os pilotos no próprio Mac (os limiares vieram do Windows).
+- Linux: diferenças e pendências em `docs/07-LINUX.md`.
 
 ## Tempos de referência (medidos numa máquina de 7,7 GB de RAM e GPU integrada; use como ordem de grandeza)
 | Formato / etapa | Medida |
