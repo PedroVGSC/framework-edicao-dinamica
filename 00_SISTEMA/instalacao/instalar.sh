@@ -68,7 +68,7 @@ instalar_homebrew() { # só instala com consentimento: pergunta s/N num terminal
 
 echo "Framework de Edição Dinâmica: $RAIZ"
 [ "$(uname -s)" = Darwin ] || echo "   Atenção: este instalador foi feito para macOS; no Linux veja docs/07-LINUX.md."
-case "$RAIZ" in *"/Library/Mobile Documents/"*|*"/Dropbox/"*|*"/Google Drive/"*|*"/OneDrive"*) echo "   Atenção: pasta sincronizada na nuvem; o render trava arquivos. Prefira ~/Projetos.";; esac
+case "$RAIZ" in *"/Library/Mobile Documents/"*|*"/Library/CloudStorage/"*|*"/Dropbox/"*|*"/Google Drive/"*|*"/OneDrive"*) echo "   Atenção: pasta sincronizada na nuvem; o render trava arquivos. Prefira ~/Projetos.";; esac
 
 # 1. Programas (Homebrew) -------------------------------------------------------------------------------------------
 passo "Programas (Homebrew): Node.js 24, FFmpeg, Git e yt-dlp"
@@ -240,7 +240,10 @@ if tem ffmpeg; then
 		echo "$f" | grep -qE " $fl " && nota "ffmpeg: filtro $fl" OK presente || nota "ffmpeg: filtro $fl" FALTA "este FFmpeg não tem o filtro (brew reinstall ffmpeg)"
 	done
 fi
-[ -f /System/Library/Fonts/Supplemental/Arial.ttf ] && nota "Arial do sistema" OK "usada nas folhas de quadros" || nota "Arial do sistema" FALTA "/System/Library/Fonts/Supplemental/Arial.ttf não existe"
+# mesma lista de candidatas do scripts/lib/fonte.mjs (darwin)
+if [ -f /System/Library/Fonts/Supplemental/Arial.ttf ] || [ -f /Library/Fonts/Arial.ttf ]; then nota "Arial do sistema" OK "usada nas folhas de quadros"
+elif [ -f /System/Library/Fonts/Helvetica.ttc ]; then nota "Arial do sistema" AVISO "sem Arial; as folhas de quadros usam a Helvetica"
+else nota "Arial do sistema" FALTA "nem Arial nem Helvetica (/System/Library/Fonts/Supplemental/Arial.ttf)"; fi
 
 echo; printf '%s\n' "${RES[@]}" | awk -F'|' '{printf "%-6s %-34s %s\n",$1,$2,$3}'
 if [ $FALTAS -eq 0 ]; then printf '\n\033[32mTUDO PRONTO. Próximo passo: abra o Claude Code na pasta do repositório.\033[0m\n'

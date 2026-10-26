@@ -26,7 +26,7 @@ Pacotes `@remotion/*` usados: `cli`, `media`, `media-utils`, `google-fonts`, `th
 |---|---|---|
 | **FFmpeg** (build "full" do gyan.dev, via winget) | GPL v3 (o build full inclui componentes GPL) | Usado como programa externo. Fonte e licenças: ffmpeg.org e gyan.dev. |
 | **FFmpeg** (fórmula `ffmpeg` do Homebrew, no macOS) | GPL-3.0-or-later (campo de licença da fórmula, formulae.brew.sh) | Usado como programa externo. |
-| **Homebrew** (no macOS, instalado por você antes do instalador) | BSD 2-Clause (repositório `Homebrew/brew`) | Gerenciador de pacotes; o instalador só o usa, não o instala. |
+| **Homebrew** (no macOS) | BSD 2-Clause (repositório `Homebrew/brew`) | Gerenciador de pacotes. Se faltar, o instalador oferece instalá-lo com o script oficial, só com o seu `s` ou com `--instalar-homebrew`. |
 | **whisper.cpp** (embutido no FFmpeg, filtro `whisper`) | MIT | — |
 | **Node.js** (winget no Windows, fórmula `node@24` no macOS) | MIT | — |
 | **Git** | GPL v2 | — |

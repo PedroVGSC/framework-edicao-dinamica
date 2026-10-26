@@ -4,7 +4,7 @@ Edição de vídeo para redes sociais feita pelo **Claude Code** no seu computad
 
 Por baixo há um motor em [Remotion](https://www.remotion.dev) (vídeo feito por código), FFmpeg, Whisper local para transcrever e um conjunto de regras, validadores e agentes. Tudo isso faz o resultado sair igual vídeo após vídeo.
 
-> Funciona no **Windows 10/11** e no **macOS 13 ou mais novo**. No Mac, só o Apple Silicon (macOS 27) foi testado; Mac Intel e macOS 13 a 26 não foram testados (guia: [docs/01-INSTALAR-MAC.md](docs/01-INSTALAR-MAC.md)). Linux ainda não: veja [docs/07-LINUX.md](docs/07-LINUX.md).
+> Funciona no **Windows 10/11** e no **macOS**. No Mac, só o Apple Silicon com macOS 27 foi testado; Mac Intel e versões anteriores do macOS não foram testados (guia: [docs/01-INSTALAR-MAC.md](docs/01-INSTALAR-MAC.md)). Linux ainda não: veja [docs/07-LINUX.md](docs/07-LINUX.md).
 
 > **Versão beta (2026-10-23).** Os 4 formatos vêm de um motor em produção, mas esta edição pública (instalador, efeitos sonoros substitutos e regressões a partir do `pilotos.json`) ainda não foi testada numa máquina limpa. Encontrou um problema? Abra uma *issue*.
 
@@ -26,7 +26,7 @@ E um quinto recurso: **`/novo-modelo`**, que treina um formato novo a partir de 
 ## Requisitos
 
 **Computador**
-- Windows 10 ou 11 (64 bits), **ou** macOS 13 ou mais novo (Apple Silicon testado; Intel não testado); o instalador do Mac oferece instalar o [Homebrew](https://brew.sh) se ele faltar.
+- Windows 10 ou 11 (64 bits), **ou** macOS (testado só no 27, Apple Silicon; versões anteriores e Mac Intel não testados); o instalador do Mac oferece instalar o [Homebrew](https://brew.sh) se ele faltar.
 - ~10 GB livres (programas, modelos de transcrição e pacotes). Cada projeto de vídeo ocupa mais 1 a 5 GB.
 - 8 GB de RAM no mínimo. Com 8 GB, renderize um vídeo por vez.
 - Internet (instalação, fontes do vídeo, bancos de imagem).
