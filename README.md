@@ -51,7 +51,7 @@ Detalhes em [docs/03-IMAGENS-E-BROLL.md](docs/03-IMAGENS-E-BROLL.md).
    ```
    (Sem terminal? Use o GitHub Desktop ou peça ao Claude Code. Passo a passo em [docs/01-INSTALAR.md](docs/01-INSTALAR.md).)
 2. **Dê duplo clique em `00_SISTEMA\instalacao\INSTALAR.bat`.** Ele instala Node.js, FFmpeg e os pacotes, baixa os modelos e confere tudo. Leva de 15 a 40 minutos, conforme a internet.
-   **No Mac:** na raiz do repositório, rode `bash 00_SISTEMA/instalacao/instalar.sh` (ou dê duplo clique em `00_SISTEMA/instalacao/INSTALAR.command`). Se faltar o Homebrew, ele pergunta `s/N` antes de instalar (ou use `--instalar-homebrew` sem terminal). Passo a passo e problemas comuns: [docs/01-INSTALAR-MAC.md](docs/01-INSTALAR-MAC.md).
+   **No Mac:** na raiz do repositório, rode `bash 00_SISTEMA/instalacao/instalar.sh` (ou dê duplo clique em `00_SISTEMA/instalacao/INSTALAR.command`). Se faltar o Homebrew, ele pergunta `s/N` antes de instalar (ou use `--instalar-homebrew`; sem terminal, só funciona se o `sudo` não pedir senha; com terminal, a senha do Mac é pedida pelo instalador do Homebrew). Passo a passo e problemas comuns: [docs/01-INSTALAR-MAC.md](docs/01-INSTALAR-MAC.md).
 3. **Preencha o que o instalador abrir no Bloco de Notas:** as chaves de API (opcionais, `.env`) e a sua marca (`marca.json`). No Mac o instalador não abre nada: abra o `.env` e o `marca.json` você mesmo com `open -e 00_SISTEMA/motor/.env` e `open -e 02_BIBLIOTECA/kit/marca/marca.json`. No fim aparece uma tabela OK/FALTA.
 
 ## Como usar (3 passos)

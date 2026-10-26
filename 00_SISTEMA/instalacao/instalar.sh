@@ -3,22 +3,22 @@
 # Pode rodar quantas vezes quiser: o que já está certo é pulado.
 # Uso (na raiz do repositório):  bash 00_SISTEMA/instalacao/instalar.sh [--sem-opcionais] [--instalar-homebrew]
 set -u
-AQUI="$(cd "$(dirname "$0")" && pwd)"
-RAIZ="$(cd "$AQUI/../.." && pwd)"
+AQUI="$(cd -- "$(dirname "$0")" >/dev/null && pwd)"
+RAIZ="$(cd -- "$AQUI/../.." >/dev/null && pwd)"
 MOTOR="$RAIZ/00_SISTEMA/motor"
-DEP="$AQUI/dependencias.json"
+DEP="$AQUI/dependencias.json"; export DEP # caminhos vão por ambiente (process.env), nunca dentro do código do node -e
 SEM_OPC=0; SIM_BREW=0
 for a in "$@"; do
 	case "$a" in
 		--sem-opcionais) SEM_OPC=1;;
 		--instalar-homebrew) SIM_BREW=1;;
-		*) echo "Uso: bash instalar.sh [--sem-opcionais] [--instalar-homebrew]" >&2; exit 2;;
+		*) echo "Uso: bash instalar.sh [--sem-opcionais] [--instalar-homebrew]" >&2; exit 64;; # 64 = uso inválido (código 2 já é "2 itens FALTA")
 	esac
 done
 RES=(); FALTAS=0
 
 # Homebrew no PATH mesmo em shell sem profile (Apple Silicon e Intel)
-for b in /opt/homebrew/bin /usr/local/bin; do [ -d "$b" ] && case ":$PATH:" in *":$b:"*) ;; *) PATH="$b:$PATH";; esac; done
+for b in /usr/local/bin /opt/homebrew/bin; do [ -d "$b" ] && case ":$PATH:" in *":$b:"*) ;; *) PATH="$b:$PATH";; esac; done
 export PATH
 
 passo() { printf '\n\033[36m==> %s\033[0m\n' "$1"; }
@@ -28,12 +28,14 @@ nota() { # item status detalhe
 	printf '   \033[%sm[%s]\033[0m %s: %s\n' "$cor" "$2" "$1" "$3"
 }
 tem() { command -v "$1" >/dev/null 2>&1; }
-sha() { shasum -a 256 "$1" | cut -d' ' -f1; }
+sha() { # sem shasum nem sha256sum devolve vazio (e o PASSO 4 avisa)
+	if tem shasum; then shasum -a 256 "$1" | cut -d' ' -f1; elif tem sha256sum; then sha256sum "$1" | cut -d' ' -f1; fi
+}
 tam() { wc -c < "$1" | tr -d ' '; }
-dep() { node -e "const d=require('$DEP');const v=($1);console.log(v===undefined||v===null?'':typeof v==='object'?JSON.stringify(v):v)"; }
+dep() { node -e "const d=require(process.env.DEP);const v=($1);console.log(v===undefined||v===null?'':typeof v==='object'?JSON.stringify(v):v)"; }
 baixar() { # url destino [sha256 esperado]. Baixa para destino.baixando e só move depois de conferir. Retorno: 1 falha de rede, 2 sha256 diferente (arquivo apagado)
 	rm -f "$2.baixando"
-	curl -L --fail --silent --show-error --retry 3 -o "$2.baixando" "$1" || { rm -f "$2.baixando"; return 1; }
+	curl -L --fail --silent --show-error --retry 3 --speed-limit 1024 --speed-time 60 -o "$2.baixando" "$1" || { rm -f "$2.baixando"; return 1; }
 	if [ -n "${3:-}" ] && [ "$(sha "$2.baixando")" != "$3" ]; then rm -f "$2.baixando"; return 2; fi
 	mv "$2.baixando" "$2"
 }
@@ -49,8 +51,9 @@ instalar_homebrew() { # só instala com consentimento: pergunta s/N num terminal
 		nota brew FALTA "instale o Homebrew (https://brew.sh; ele pede as Xcode Command Line Tools) com o comando oficial: $BREW_CMD e rode este instalador de novo (ou use --instalar-homebrew)"
 		return 1
 	fi
-	if [ $SIM_BREW = 1 ]; then NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-	else /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi
+	# com terminal o próprio instalador do Homebrew pede a senha; NONINTERACTIVE usa "sudo -n" e aborta sem NOPASSWD
+	if [ -t 0 ]; then /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+	else NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi
 	eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
 	if ! tem brew; then nota brew FALTA "o instalador do Homebrew não terminou (sem internet, sem senha de administrador ou cancelado): rode este instalador de novo"; return 1; fi
 	nota brew OK "Homebrew instalado"
@@ -69,14 +72,26 @@ passo "Programas (Homebrew): Node.js 24, FFmpeg, Git e yt-dlp"
 if ! tem brew; then instalar_homebrew; fi
 if tem brew; then
 	# sem node não dá para ler o dependencias.json: instala o node primeiro (única fórmula fixa aqui)
-	if ! tem node; then echo "   instalando node@24..."; brew install node@24; brew link --overwrite --force node@24 >/dev/null 2>&1; fi
+	if ! tem node; then echo "   instalando node@24..."; brew install node@24
+		brew link --force node@24 || echo "   brew link falhou para node@24"
+		if ! tem node; then
+			PATH="$(brew --prefix node@24)/bin:$PATH"; export PATH
+			tem node && nota node AVISO "o node@24 do Homebrew não está no PATH do seu Terminal (usado só nesta execução); rode: brew link --force node@24"
+		fi
+	fi
+fi
+# sem dependencias.json legível não há o que conferir: para aqui
+if tem node && ! node -e 'require(process.env.DEP)' >/dev/null 2>&1; then
+	nota dependencias.json FALTA "ilegível ou inválido ($DEP): restaure o arquivo do repositório"
+	printf '%s\n' "${RES[@]}" | awk -F'|' '{printf "%-6s %-34s %s\n",$1,$2,$3}'; exit $FALTAS
+fi
+if tem brew; then
 	# se o comando já existe (ex.: node pelo fnm/nvm), não reinstala
 	for i in $(tem node && seq 0 $(( $(dep "d.brew.length") - 1 ))); do
 		cmd=$(dep "d.brew[$i].comando"); [ -z "$cmd" ] && continue
 		opc=$(dep "d.brew[$i].opcional"); [ "$opc" = true ] && [ $SEM_OPC = 1 ] && continue
 		if ! tem "$cmd"; then
 			f=$(dep "d.brew[$i].formula"); echo "   instalando $f..."; brew install "$f"
-			[ "$cmd" = node ] && brew link --overwrite --force node@24 >/dev/null 2>&1
 		fi
 	done
 fi
@@ -87,6 +102,10 @@ for i in $(tem node && seq 0 $(( $(dep "d.brew.length") - 1 ))); do
 	conf=$(dep "d.brew[$i].conferir"); nt=$(dep "d.brew[$i].nota")
 	if tem "$cmd"; then
 		if [ "$cmd" = ffmpeg ]; then v=$(ffmpeg -hide_banner -version 2>/dev/null | head -1); else v=$("$cmd" --version 2>/dev/null | head -1); fi
+		if [ -z "$v" ]; then
+			m="$cmd não funciona"; [ "$cmd" = git ] && m="git não funciona; instale as Xcode Command Line Tools: xcode-select --install"
+			nota "$cmd" FALTA "$m"; continue
+		fi
 		case "$v" in *"$conf"*) nota "$cmd" OK "$v";; *) nota "$cmd" AVISO "versão diferente da testada: $v";; esac
 	else
 		[ "$opc" = true ] && nota "$cmd" AVISO "não instalado ($nt)" || nota "$cmd" FALTA "não instalado ($nt)"
@@ -94,16 +113,16 @@ for i in $(tem node && seq 0 $(( $(dep "d.brew.length") - 1 ))); do
 done
 
 # 2. Pastas vazias que o Git não guarda -----------------------------------------------------------------------------
-if tem node; then for d in $(node -e "console.log(require('$DEP').pastas_vazias.join('\n'))" 2>/dev/null); do mkdir -p "$RAIZ/$d"; done; fi
+if tem node; then for d in $(node -e "console.log(require(process.env.DEP).pastas_vazias.join('\n'))" 2>/dev/null); do mkdir -p "$RAIZ/$d"; done; fi
 
 # 3. Pacotes do motor e navegador do Remotion -----------------------------------------------------------------------
 passo "Pacotes do motor (npm ci, versões travadas no package-lock.json) e navegador do Remotion"
 if tem node && tem npm; then
 	cd "$MOTOR" || exit 1
-	[ -f node_modules/remotion/package.json ] || npm ci --no-audit --no-fund
+	npm ls --depth=0 >/dev/null 2>&1 || npm ci --no-audit --no-fund # refaz npm ci interrompido
 	rv=""
 	if [ -f node_modules/remotion/package.json ]; then
-		node node_modules/@remotion/cli/remotion-cli.js browser ensure
+		node node_modules/@remotion/cli/remotion-cli.js browser ensure || nota "navegador do Remotion" FALTA "não baixou (internet?): rode de novo"
 		rv=$(node -e "console.log(require('remotion/package.json').version)" 2>/dev/null)
 	fi
 	esperada=$(dep "d.remotion")
@@ -119,7 +138,7 @@ fi
 # 4. Modelos e ferramentas baixados ---------------------------------------------------------------------------------
 passo "Modelos do Whisper, DeepFilterNet e modelos de ruído"
 if ! tem node; then nota "modelos e DeepFilterNet" FALTA "sem Node.js não leio a lista de downloads (passo 1)"; else
-n=$(node -e "console.log(require('$DEP').downloads.length)")
+n=$(node -e "console.log(require(process.env.DEP).downloads.length)")
 for i in $(seq 0 $((n-1))); do
 	dest=$(dep "d.downloads[$i].destino")
 	case "$dest" in *deep-filter.exe) continue;; esac # binário do Windows: o do macOS vem abaixo
@@ -130,6 +149,7 @@ for i in $(seq 0 $((n-1))); do
 	rc=0
 	certo || { echo "   baixando $nome ($((bytes/1048576)) MB)"; baixar "$url" "$alvo" "$esp"; rc=$?; }
 	if [ $rc = 2 ]; then nota "$nome" FALTA "sha256 DIFERENTE do esperado: arquivo baixado foi apagado; rode de novo"; continue; fi
+	if [ $rc = 1 ]; then [ "$opc" = true ] && s=AVISO || s=FALTA; nota "$nome" $s "não baixou (sem internet?): rode de novo"; continue; fi
 	if [ ! -f "$alvo" ]; then [ "$opc" = true ] && s=AVISO || s=FALTA; nota "$nome" $s "não baixou (sem internet?): rode de novo"; continue; fi
 	if [ -n "$esp" ]; then
 		[ "$(sha "$alvo")" = "$esp" ] && nota "$nome" OK "sha256 confere" || nota "$nome" FALTA "sha256 DIFERENTE: apague o arquivo e rode de novo"
@@ -149,7 +169,8 @@ else
 	if [ ! -f "$DFN" ] || [ "$(sha "$DFN")" != "$desp" ]; then
 		rm -f "$DFN"; echo "   baixando deep-filter ($((dbytes/1048576)) MB)"; baixar "$durl" "$DFN" "$desp"; rc=$?
 	fi
-	if [ $rc = 2 ]; then nota deep-filter FALTA "sha256 DIFERENTE do esperado: binário baixado foi apagado e não executado; rode de novo"
+	if [ $rc = 1 ]; then nota deep-filter FALTA "não baixou (sem internet?): rode de novo"
+	elif [ $rc = 2 ]; then nota deep-filter FALTA "sha256 DIFERENTE do esperado: binário baixado foi apagado e não executado; rode de novo"
 	elif [ -f "$DFN" ]; then
 		# aqui o sha256 já foi conferido: só agora torna executável e tira a quarentena
 		chmod +x "$DFN"; xattr -d com.apple.quarantine "$DFN" 2>/dev/null
@@ -162,7 +183,7 @@ fi
 # 5. Efeitos sonoros ------------------------------------------------------------------------------------------------
 passo "Efeitos sonoros básicos (gerados por código)"
 SFX="$RAIZ/02_BIBLIOTECA/sfx"
-lista=""; tem node && lista=$(node -e "console.log(require('$DEP').sfx_sintetizados.join(' '))")
+lista=""; tem node && lista=$(node -e "console.log(require(process.env.DEP).sfx_sintetizados.join(' '))")
 faltam() { local f=""; for s in $lista; do [ -f "$SFX/$s.wav" ] || f="$f $s"; done; echo "$f"; }
 if [ -n "$(faltam)" ] && tem node; then (cd "$MOTOR" && node scripts/synth-sfx.mjs "$SFX" >/dev/null); fi
 fs="$(faltam)"
@@ -180,7 +201,7 @@ else nota "SFX básicos" FALTA "faltam:$fs"; fi
 # 6. Chaves de API (.env) -------------------------------------------------------------------------------------------
 passo "Chaves de API (.env, todas opcionais)"
 [ -f "$MOTOR/.env" ] || cp "$MOTOR/.env.example" "$MOTOR/.env"
-chaves=$(grep -cE '^[[:space:]]*(GEMINI|PEXELS|PIXABAY)_API_KEY[[:space:]]*=[[:space:]]*[^[:space:]]' "$MOTOR/.env")
+chaves=$(grep -cE '^[[:space:]]*(GEMINI|PEXELS|PIXABAY)_API_KEY[[:space:]]*=[[:space:]]*("[^"[:space:]]|'"'"'[^'"'"'[:space:]]|[^[:space:]"'"'"'])' "$MOTOR/.env")
 [ "$chaves" -ge 1 ] && nota .env OK "$chaves de 3 chaves preenchidas" || nota .env AVISO "nenhuma chave (opcional). Abrir: open -e 00_SISTEMA/motor/.env"
 
 # 7. Marca ----------------------------------------------------------------------------------------------------------
@@ -188,7 +209,7 @@ passo "Sua marca (02_BIBLIOTECA/kit/marca/marca.json)"
 M="$RAIZ/02_BIBLIOTECA/kit/marca/marca.json"
 if ! tem node; then nota marca.json FALTA "sem Node.js não valido o arquivo (passo 1)"
 elif [ -f "$M" ]; then
-	if ! node -e "JSON.parse(require('fs').readFileSync('$M','utf8'))" 2>/dev/null; then nota marca.json FALTA "arquivo inválido (aspas ou vírgula faltando)"
+	if ! M="$M" node -e "JSON.parse(require('fs').readFileSync(process.env.M,'utf8'))" 2>/dev/null; then nota marca.json FALTA "arquivo inválido (aspas ou vírgula faltando)"
 	elif grep -q seu_perfil "$M"; then nota marca.json AVISO "ainda com o @ de exemplo: preencha antes do primeiro vídeo"
 	else nota marca.json OK preenchido; fi
 else nota marca.json FALTA "arquivo não encontrado"; fi

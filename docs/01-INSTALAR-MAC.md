@@ -12,7 +12,7 @@ Equivalente do [01-INSTALAR.md](01-INSTALAR.md) (Windows) para **macOS** (Apple 
 
 ### Homebrew e Xcode Command Line Tools
 
-Sem o Homebrew, o instalador pergunta `Instalar agora com o instalador oficial? [s/N]` e só instala se você responder `s`. Sem terminal interativo, `--instalar-homebrew` autoriza a instalação; sem pergunta e sem a flag, ele não instala nada: para na linha `brew` com FALTA e mostra o comando oficial (do [brew.sh](https://brew.sh)), que você também pode colar no Terminal:
+Sem o Homebrew, o instalador pergunta `Instalar agora com o instalador oficial? [s/N]` e só instala se você responder `s`. Sem terminal interativo, `--instalar-homebrew` autoriza a instalação (nesse modo o instalador do Homebrew usa `sudo` sem senha, então só funciona se o seu `sudo` não pedir senha; com terminal, a senha do Mac é pedida pelo próprio instalador do Homebrew); sem pergunta e sem a flag, ele não instala nada: para na linha `brew` com FALTA e mostra o comando oficial (do [brew.sh](https://brew.sh)), que você também pode colar no Terminal:
 
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
