@@ -1,6 +1,6 @@
 # 07 - Linux (ainda não suportado)
 
-O framework foi feito e testado no **Windows 10/11**. Esta é a lista do que falta para rodar no Linux (máquina local ou servidor na nuvem). **Nada disso foi convertido ainda**: é um mapa para quem quiser contribuir.
+O framework foi feito e testado no **Windows 10/11** (o macOS tem guia próprio: [01-INSTALAR-MAC.md](01-INSTALAR-MAC.md)). Esta é a lista do que falta para rodar no Linux (máquina local ou servidor na nuvem). **Nada disso foi convertido ainda**: é um mapa para quem quiser contribuir.
 
 Referência: máquina Linux com 4 núcleos e 16 GB de RAM, provavelmente sem GPU.
 Tamanho: P = até 30 min · M = 1–2 h · G = meio dia ou mais (inclui medir e recalibrar).
