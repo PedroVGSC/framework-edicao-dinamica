@@ -22,11 +22,13 @@ nota() { # item status detalhe
 }
 tem() { command -v "$1" >/dev/null 2>&1; }
 sha() { shasum -a 256 "$1" | cut -d' ' -f1; }
-tam() { stat -f%z "$1"; }
+tam() { wc -c < "$1" | tr -d ' '; }
 dep() { node -e "const d=require('$DEP');const v=($1);console.log(v===undefined||v===null?'':typeof v==='object'?JSON.stringify(v):v)"; }
-baixar() { # url destino
+baixar() { # url destino [sha256 esperado]. Baixa para destino.baixando e só move depois de conferir. Retorno: 1 falha de rede, 2 sha256 diferente (arquivo apagado)
 	rm -f "$2.baixando"
-	curl -L --fail --silent --show-error --retry 3 -o "$2.baixando" "$1" && mv "$2.baixando" "$2" || { rm -f "$2.baixando"; return 1; }
+	curl -L --fail --silent --show-error --retry 3 -o "$2.baixando" "$1" || { rm -f "$2.baixando"; return 1; }
+	if [ -n "${3:-}" ] && [ "$(sha "$2.baixando")" != "$3" ]; then rm -f "$2.baixando"; return 2; fi
+	mv "$2.baixando" "$2"
 }
 
 echo "Framework de Edição Dinâmica: $RAIZ"
@@ -38,8 +40,10 @@ passo "Programas (Homebrew): Node.js 24, FFmpeg, Git e yt-dlp"
 if ! tem brew; then
 	nota brew FALTA 'instale o Homebrew (https://brew.sh; ele pede as Xcode Command Line Tools) com o comando oficial: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" e rode este instalador de novo'
 else
+	# sem node não dá para ler o dependencias.json: instala o node primeiro (única fórmula fixa aqui)
+	if ! tem node; then echo "   instalando node@24..."; brew install node@24; brew link --overwrite --force node@24 >/dev/null 2>&1; fi
 	# se o comando já existe (ex.: node pelo fnm/nvm), não reinstala
-	for i in $(seq 0 $(( $(dep "d.brew.length") - 1 ))); do
+	for i in $(tem node && seq 0 $(( $(dep "d.brew.length") - 1 ))); do
 		cmd=$(dep "d.brew[$i].comando"); [ -z "$cmd" ] && continue
 		opc=$(dep "d.brew[$i].opcional"); [ "$opc" = true ] && [ $SEM_OPC = 1 ] && continue
 		if ! tem "$cmd"; then
@@ -48,7 +52,8 @@ else
 		fi
 	done
 fi
-for i in $(seq 0 $(( $(dep "d.brew.length") - 1 ))); do
+if ! tem node; then nota node FALTA "Node.js não está instalado: sem ele o instalador não lê as versões e pula os passos 2 a 7"; fi
+for i in $(tem node && seq 0 $(( $(dep "d.brew.length") - 1 ))); do
 	cmd=$(dep "d.brew[$i].comando"); [ -z "$cmd" ] && continue
 	opc=$(dep "d.brew[$i].opcional"); [ "$opc" = true ] && [ $SEM_OPC = 1 ] && continue
 	conf=$(dep "d.brew[$i].conferir"); nt=$(dep "d.brew[$i].nota")
@@ -61,7 +66,7 @@ for i in $(seq 0 $(( $(dep "d.brew.length") - 1 ))); do
 done
 
 # 2. Pastas vazias que o Git não guarda -----------------------------------------------------------------------------
-for d in $(node -e "console.log(require('$DEP').pastas_vazias.join('\n'))" 2>/dev/null); do mkdir -p "$RAIZ/$d"; done
+if tem node; then for d in $(node -e "console.log(require('$DEP').pastas_vazias.join('\n'))" 2>/dev/null); do mkdir -p "$RAIZ/$d"; done; fi
 
 # 3. Pacotes do motor e navegador do Remotion -----------------------------------------------------------------------
 passo "Pacotes do motor (npm ci, versões travadas no package-lock.json) e navegador do Remotion"
@@ -85,6 +90,7 @@ fi
 
 # 4. Modelos e ferramentas baixados ---------------------------------------------------------------------------------
 passo "Modelos do Whisper, DeepFilterNet e modelos de ruído"
+if ! tem node; then nota "modelos e DeepFilterNet" FALTA "sem Node.js não leio a lista de downloads (passo 1)"; else
 n=$(node -e "console.log(require('$DEP').downloads.length)")
 for i in $(seq 0 $((n-1))); do
 	dest=$(dep "d.downloads[$i].destino")
@@ -93,7 +99,9 @@ for i in $(seq 0 $((n-1))); do
 	url=$(dep "d.downloads[$i].url"); bytes=$(dep "d.downloads[$i].bytes"); esp=$(dep "d.downloads[$i].sha256")
 	alvo="$RAIZ/$dest"; nome=$(basename "$alvo"); mkdir -p "$(dirname "$alvo")"
 	certo() { [ -f "$alvo" ] || return 1; if [ -n "$esp" ]; then [ "$(sha "$alvo")" = "$esp" ]; else [ "$(tam "$alvo")" = "$bytes" ]; fi; }
-	certo || { echo "   baixando $nome ($((bytes/1048576)) MB)"; baixar "$url" "$alvo"; }
+	rc=0
+	certo || { echo "   baixando $nome ($((bytes/1048576)) MB)"; baixar "$url" "$alvo" "$esp"; rc=$?; }
+	if [ $rc = 2 ]; then nota "$nome" FALTA "sha256 DIFERENTE do esperado: arquivo baixado foi apagado; rode de novo"; continue; fi
 	if [ ! -f "$alvo" ]; then [ "$opc" = true ] && s=AVISO || s=FALTA; nota "$nome" $s "não baixou (sem internet?): rode de novo"; continue; fi
 	if [ -n "$esp" ]; then
 		[ "$(sha "$alvo")" = "$esp" ] && nota "$nome" OK "sha256 confere" || nota "$nome" FALTA "sha256 DIFERENTE: apague o arquivo e rode de novo"
@@ -106,26 +114,32 @@ plat="$(uname -s | tr A-Z a-z)-$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x64/'
 durl=$(dep "d.deepfilternet_unix['$plat'].url")
 DFN="$RAIZ/00_SISTEMA/ferramentas/deepfilternet/deep-filter"
 if [ -z "$durl" ]; then nota deep-filter AVISO "sem binário para $plat (o estúdio de áudio usa o afftdn do FFmpeg)"
+elif [ -z "$(dep "d.deepfilternet_unix['$plat'].sha256")" ]; then nota deep-filter AVISO "sem sha256 publicado para $plat: binário não executado (o estúdio de áudio usa o afftdn do FFmpeg)"
 else
 	dbytes=$(dep "d.deepfilternet_unix['$plat'].bytes"); desp=$(dep "d.deepfilternet_unix['$plat'].sha256")
-	mkdir -p "$(dirname "$DFN")"
-	if [ ! -f "$DFN" ] || [ "$(tam "$DFN")" != "$dbytes" ]; then echo "   baixando deep-filter ($((dbytes/1048576)) MB)"; baixar "$durl" "$DFN"; fi
-	if [ -f "$DFN" ]; then
+	mkdir -p "$(dirname "$DFN")"; rc=0
+	if [ ! -f "$DFN" ] || [ "$(sha "$DFN")" != "$desp" ]; then
+		rm -f "$DFN"; echo "   baixando deep-filter ($((dbytes/1048576)) MB)"; baixar "$durl" "$DFN" "$desp"; rc=$?
+	fi
+	if [ $rc = 2 ]; then nota deep-filter FALTA "sha256 DIFERENTE do esperado: binário baixado foi apagado e não executado; rode de novo"
+	elif [ -f "$DFN" ]; then
+		# aqui o sha256 já foi conferido: só agora torna executável e tira a quarentena
 		chmod +x "$DFN"; xattr -d com.apple.quarantine "$DFN" 2>/dev/null
-		if [ -n "$desp" ] && [ "$(sha "$DFN")" != "$desp" ]; then nota deep-filter FALTA "sha256 DIFERENTE: apague $DFN e rode de novo"
-		elif "$DFN" --version 2>/dev/null | grep -q '0\.5\.6'; then nota "deep-filter roda" OK "${desp:+sha256 confere; }$("$DFN" --version 2>/dev/null | head -1)"
+		if "$DFN" --version 2>/dev/null | grep -q '0\.5\.6'; then nota "deep-filter roda" OK "sha256 confere; $("$DFN" --version 2>/dev/null | head -1)"
 		else nota "deep-filter roda" FALTA "não abriu (veja docs/01-INSTALAR-MAC.md)"; fi
 	else nota deep-filter FALTA "não baixou: rode de novo"; fi
+fi
 fi
 
 # 5. Efeitos sonoros ------------------------------------------------------------------------------------------------
 passo "Efeitos sonoros básicos (gerados por código)"
 SFX="$RAIZ/02_BIBLIOTECA/sfx"
-lista=$(node -e "console.log(require('$DEP').sfx_sintetizados.join(' '))")
+lista=""; tem node && lista=$(node -e "console.log(require('$DEP').sfx_sintetizados.join(' '))")
 faltam() { local f=""; for s in $lista; do [ -f "$SFX/$s.wav" ] || f="$f $s"; done; echo "$f"; }
 if [ -n "$(faltam)" ] && tem node; then (cd "$MOTOR" && node scripts/synth-sfx.mjs "$SFX" >/dev/null); fi
 fs="$(faltam)"
-if [ -z "$fs" ]; then
+if ! tem node; then nota "SFX básicos" FALTA "sem Node.js não gero os efeitos (passo 1)"
+elif [ -z "$fs" ]; then
 	nota "SFX básicos" OK "$(echo $lista | wc -w | tr -d ' ') efeitos em 02_BIBLIOTECA/sfx"
 	if tem ffmpeg; then
 		saida=$(cd "$MOTOR" && node scripts/sfx-substitutos.mjs 2>&1); cod=$?
@@ -144,7 +158,8 @@ chaves=$(grep -cE '^[[:space:]]*(GEMINI|PEXELS|PIXABAY)_API_KEY[[:space:]]*=[[:s
 # 7. Marca ----------------------------------------------------------------------------------------------------------
 passo "Sua marca (02_BIBLIOTECA/kit/marca/marca.json)"
 M="$RAIZ/02_BIBLIOTECA/kit/marca/marca.json"
-if [ -f "$M" ]; then
+if ! tem node; then nota marca.json FALTA "sem Node.js não valido o arquivo (passo 1)"
+elif [ -f "$M" ]; then
 	if ! node -e "JSON.parse(require('fs').readFileSync('$M','utf8'))" 2>/dev/null; then nota marca.json FALTA "arquivo inválido (aspas ou vírgula faltando)"
 	elif grep -q seu_perfil "$M"; then nota marca.json AVISO "ainda com o @ de exemplo: preencha antes do primeiro vídeo"
 	else nota marca.json OK preenchido; fi
