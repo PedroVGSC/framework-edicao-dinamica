@@ -28,14 +28,17 @@ nota() { # item status detalhe
 	printf '   \033[%sm[%s]\033[0m %s: %s\n' "$cor" "$2" "$1" "$3"
 }
 tem() { command -v "$1" >/dev/null 2>&1; }
-sha() { # sem shasum nem sha256sum devolve vazio (e o PASSO 4 avisa)
+sha() { # sem shasum nem sha256sum devolve vazio (o PASSO 4 confere isso antes de baixar)
 	if tem shasum; then shasum -a 256 "$1" | cut -d' ' -f1; elif tem sha256sum; then sha256sum "$1" | cut -d' ' -f1; fi
 }
+num() { case "$1" in ''|*[!0-9]*) return 1;; esac; } # só dígitos (valores do JSON entram em aritmética)
+indices() { [ "$1" -gt 0 ] && seq 0 $(($1-1)); } # 0..n-1 (nada se n=0)
 tam() { wc -c < "$1" | tr -d ' '; }
 dep() { node -e "const d=require(process.env.DEP);const v=($1);console.log(v===undefined||v===null?'':typeof v==='object'?JSON.stringify(v):v)"; }
 baixar() { # url destino [sha256 esperado]. Baixa para destino.baixando e só move depois de conferir. Retorno: 1 falha de rede, 2 sha256 diferente (arquivo apagado)
 	rm -f "$2.baixando"
-	curl -L --fail --silent --show-error --retry 3 --speed-limit 1024 --speed-time 60 -o "$2.baixando" "$1" || { rm -f "$2.baixando"; return 1; }
+	case "$1" in https://*) ;; *) return 1;; esac
+	curl -L --proto '=https' --proto-redir '=https' --fail --silent --show-error --retry 3 --speed-limit 1024 --speed-time 60 -o "$2.baixando" --url "$1" || { rm -f "$2.baixando"; return 1; }
 	if [ -n "${3:-}" ] && [ "$(sha "$2.baixando")" != "$3" ]; then rm -f "$2.baixando"; return 2; fi
 	mv "$2.baixando" "$2"
 }
@@ -85,18 +88,21 @@ if tem node && ! node -e 'require(process.env.DEP)' >/dev/null 2>&1; then
 	nota dependencias.json FALTA "ilegível ou inválido ($DEP): restaure o arquivo do repositório"
 	printf '%s\n' "${RES[@]}" | awk -F'|' '{printf "%-6s %-34s %s\n",$1,$2,$3}'; exit $FALTAS
 fi
+NB=0; if tem node; then NB=$(dep "d.brew.length" 2>/dev/null); num "$NB" || NB=0; fi
 if tem brew; then
 	# se o comando já existe (ex.: node pelo fnm/nvm), não reinstala
-	for i in $(tem node && seq 0 $(( $(dep "d.brew.length") - 1 ))); do
+	for i in $(indices $NB); do
 		cmd=$(dep "d.brew[$i].comando"); [ -z "$cmd" ] && continue
 		opc=$(dep "d.brew[$i].opcional"); [ "$opc" = true ] && [ $SEM_OPC = 1 ] && continue
 		if ! tem "$cmd"; then
-			f=$(dep "d.brew[$i].formula"); echo "   instalando $f..."; brew install "$f"
+			f=$(dep "d.brew[$i].formula")
+			case "$f" in ''|*/*|-*) nota "$cmd" FALTA "fórmula inválida no dependencias.json ('$f'; tap de terceiros não é aceito)"; continue;; esac
+			echo "   instalando $f..."; brew install "$f"
 		fi
 	done
 fi
 if ! tem node; then nota node FALTA "Node.js não está instalado: sem ele o instalador não lê as versões e pula os passos 2 a 7"; fi
-for i in $(tem node && seq 0 $(( $(dep "d.brew.length") - 1 ))); do
+for i in $(indices $NB); do
 	cmd=$(dep "d.brew[$i].comando"); [ -z "$cmd" ] && continue
 	opc=$(dep "d.brew[$i].opcional"); [ "$opc" = true ] && [ $SEM_OPC = 1 ] && continue
 	conf=$(dep "d.brew[$i].conferir"); nt=$(dep "d.brew[$i].nota")
@@ -113,7 +119,10 @@ for i in $(tem node && seq 0 $(( $(dep "d.brew.length") - 1 ))); do
 done
 
 # 2. Pastas vazias que o Git não guarda -----------------------------------------------------------------------------
-if tem node; then for d in $(node -e "console.log(require(process.env.DEP).pastas_vazias.join('\n'))" 2>/dev/null); do mkdir -p "$RAIZ/$d"; done; fi
+if tem node; then while IFS= read -r d; do
+	case "$d" in ''|/*|*..*) nota "pasta '$d'" FALTA "destino inválido no dependencias.json"; continue;; esac
+	mkdir -p "$RAIZ/$d"
+done < <(node -e "console.log(require(process.env.DEP).pastas_vazias.join('\n'))" 2>/dev/null); fi
 
 # 3. Pacotes do motor e navegador do Remotion -----------------------------------------------------------------------
 passo "Pacotes do motor (npm ci, versões travadas no package-lock.json) e navegador do Remotion"
@@ -137,13 +146,19 @@ fi
 
 # 4. Modelos e ferramentas baixados ---------------------------------------------------------------------------------
 passo "Modelos do Whisper, DeepFilterNet e modelos de ruído"
-if ! tem node; then nota "modelos e DeepFilterNet" FALTA "sem Node.js não leio a lista de downloads (passo 1)"; else
-n=$(node -e "console.log(require(process.env.DEP).downloads.length)")
-for i in $(seq 0 $((n-1))); do
+if ! tem node; then nota "modelos e DeepFilterNet" FALTA "sem Node.js não leio a lista de downloads (passo 1)"
+elif [ -z "$(sha "$DEP")" ]; then nota "modelos e DeepFilterNet" FALTA "sem shasum/sha256sum: não consigo conferir downloads; nada foi baixado"
+else
+n=$(node -e "console.log(require(process.env.DEP).downloads.length)" 2>/dev/null); num "$n" || n=0
+for i in $(indices $n); do
 	dest=$(dep "d.downloads[$i].destino")
+	case "$dest" in ''|/*|*..*) nota "download $i" FALTA "destino inválido no dependencias.json ('$dest')"; continue;; esac
 	case "$dest" in *deep-filter.exe) continue;; esac # binário do Windows: o do macOS vem abaixo
 	opc=$(dep "d.downloads[$i].opcional"); [ "$opc" = true ] && [ $SEM_OPC = 1 ] && continue
 	url=$(dep "d.downloads[$i].url"); bytes=$(dep "d.downloads[$i].bytes"); esp=$(dep "d.downloads[$i].sha256")
+	nome0=$(basename "$dest")
+	case "$url" in https://*) ;; *) nota "$nome0" FALTA "url inválida no dependencias.json (só https://)"; continue;; esac
+	num "$bytes" || { nota "$nome0" FALTA "bytes inválido no dependencias.json"; continue; }
 	alvo="$RAIZ/$dest"; nome=$(basename "$alvo"); mkdir -p "$(dirname "$alvo")"
 	certo() { [ -f "$alvo" ] || return 1; if [ -n "$esp" ]; then [ "$(sha "$alvo")" = "$esp" ]; else [ "$(tam "$alvo")" = "$bytes" ]; fi; }
 	rc=0
@@ -159,12 +174,14 @@ for i in $(seq 0 $((n-1))); do
 done
 # DeepFilterNet para o Mac
 plat="$(uname -s | tr A-Z a-z)-$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x64/')"
-durl=$(dep "d.deepfilternet_unix['$plat'].url")
+durl=$(dep "d.deepfilternet_unix?.['$plat']?.url")
 DFN="$RAIZ/00_SISTEMA/ferramentas/deepfilternet/deep-filter"
 if [ -z "$durl" ]; then nota deep-filter AVISO "sem binário para $plat (o estúdio de áudio usa o afftdn do FFmpeg)"
-elif [ -z "$(dep "d.deepfilternet_unix['$plat'].sha256")" ]; then nota deep-filter AVISO "sem sha256 publicado para $plat: binário não executado (o estúdio de áudio usa o afftdn do FFmpeg)"
+elif [ -z "$(dep "d.deepfilternet_unix?.['$plat']?.sha256")" ]; then nota deep-filter AVISO "sem sha256 publicado para $plat: binário não executado (o estúdio de áudio usa o afftdn do FFmpeg)"
 else
 	dbytes=$(dep "d.deepfilternet_unix['$plat'].bytes"); desp=$(dep "d.deepfilternet_unix['$plat'].sha256")
+	case "$durl" in https://*) ;; *) dbytes=x;; esac
+	if ! num "$dbytes"; then nota deep-filter FALTA "url ou bytes inválidos no dependencias.json"; else
 	mkdir -p "$(dirname "$DFN")"; rc=0
 	if [ ! -f "$DFN" ] || [ "$(sha "$DFN")" != "$desp" ]; then
 		rm -f "$DFN"; echo "   baixando deep-filter ($((dbytes/1048576)) MB)"; baixar "$durl" "$DFN" "$desp"; rc=$?
@@ -177,6 +194,7 @@ else
 		if "$DFN" --version 2>/dev/null | grep -q '0\.5\.6'; then nota "deep-filter roda" OK "sha256 confere; $("$DFN" --version 2>/dev/null | head -1)"
 		else nota "deep-filter roda" FALTA "não abriu (veja docs/01-INSTALAR-MAC.md)"; fi
 	else nota deep-filter FALTA "não baixou: rode de novo"; fi
+	fi
 fi
 fi
 
@@ -200,7 +218,7 @@ else nota "SFX básicos" FALTA "faltam:$fs"; fi
 
 # 6. Chaves de API (.env) -------------------------------------------------------------------------------------------
 passo "Chaves de API (.env, todas opcionais)"
-[ -f "$MOTOR/.env" ] || cp "$MOTOR/.env.example" "$MOTOR/.env"
+[ -f "$MOTOR/.env" ] || (umask 077; cp "$MOTOR/.env.example" "$MOTOR/.env") # chaves de API: só o dono lê
 chaves=$(grep -cE '^[[:space:]]*(GEMINI|PEXELS|PIXABAY)_API_KEY[[:space:]]*=[[:space:]]*("[^"[:space:]]|'"'"'[^'"'"'[:space:]]|[^[:space:]"'"'"'])' "$MOTOR/.env")
 [ "$chaves" -ge 1 ] && nota .env OK "$chaves de 3 chaves preenchidas" || nota .env AVISO "nenhuma chave (opcional). Abrir: open -e 00_SISTEMA/motor/.env"
 
