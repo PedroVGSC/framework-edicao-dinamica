@@ -52,41 +52,41 @@
     },
     {
       "destino": "00_SISTEMA/modelos/rnnoise/bd.rnnn",
-      "url": "https://raw.githubusercontent.com/GregorR/rnnoise-models/master/beguiling-drafter-2018-08-30/bd.rnnn",
+      "url": "https://raw.githubusercontent.com/GregorR/rnnoise-models/3eee541a283fd3b8f81b85b1748e3b9ccbefa04d/beguiling-drafter-2018-08-30/bd.rnnn",
       "bytes": 299693,
-      "sha256": null,
+      "sha256": "ae3f7411e1e6a884f839a4a145c394408398f09854dbc1216ee02faafc98a17b",
       "opcional": true,
       "nota": "Modelo RNNoise para o filtro arnndn do FFmpeg (uso manual; nenhum script atual usa)"
     },
     {
       "destino": "00_SISTEMA/modelos/rnnoise/cb.rnnn",
-      "url": "https://raw.githubusercontent.com/GregorR/rnnoise-models/master/conjoined-burgers-2018-08-28/cb.rnnn",
+      "url": "https://raw.githubusercontent.com/GregorR/rnnoise-models/3eee541a283fd3b8f81b85b1748e3b9ccbefa04d/conjoined-burgers-2018-08-28/cb.rnnn",
       "bytes": 299741,
-      "sha256": null,
+      "sha256": "f1357c4e5be9dee8467bead486dfced2d75b640c26ad0b594fa7f102322371d9",
       "opcional": true,
       "nota": "Modelo RNNoise para o filtro arnndn do FFmpeg (uso manual; nenhum script atual usa)"
     },
     {
       "destino": "00_SISTEMA/modelos/rnnoise/lq.rnnn",
-      "url": "https://raw.githubusercontent.com/GregorR/rnnoise-models/master/leavened-quisling-2018-08-31/lq.rnnn",
+      "url": "https://raw.githubusercontent.com/GregorR/rnnoise-models/3eee541a283fd3b8f81b85b1748e3b9ccbefa04d/leavened-quisling-2018-08-31/lq.rnnn",
       "bytes": 297041,
-      "sha256": null,
+      "sha256": "1957528b752799fddf06270bc5469af7cf54c3badc358544ae2abed730943ff9",
       "opcional": true,
       "nota": "Modelo RNNoise para o filtro arnndn do FFmpeg (uso manual; nenhum script atual usa)"
     },
     {
       "destino": "00_SISTEMA/modelos/rnnoise/mp.rnnn",
-      "url": "https://raw.githubusercontent.com/GregorR/rnnoise-models/master/marathon-prescription-2018-08-29/mp.rnnn",
+      "url": "https://raw.githubusercontent.com/GregorR/rnnoise-models/3eee541a283fd3b8f81b85b1748e3b9ccbefa04d/marathon-prescription-2018-08-29/mp.rnnn",
       "bytes": 296861,
-      "sha256": null,
+      "sha256": "4e84a448a4baf937992aaf4d10c8258007ec5d24219b6647dfd5fb4b563ad231",
       "opcional": true,
       "nota": "Modelo RNNoise para o filtro arnndn do FFmpeg (uso manual; nenhum script atual usa)"
     },
     {
       "destino": "00_SISTEMA/modelos/rnnoise/sh.rnnn",
-      "url": "https://raw.githubusercontent.com/GregorR/rnnoise-models/master/somnolent-hogwash-2018-09-01/sh.rnnn",
+      "url": "https://raw.githubusercontent.com/GregorR/rnnoise-models/3eee541a283fd3b8f81b85b1748e3b9ccbefa04d/somnolent-hogwash-2018-09-01/sh.rnnn",
       "bytes": 297646,
-      "sha256": null,
+      "sha256": "70bb6685eb0c2a1d18e2918dca3fbfbd39317010b1802eb1b6ea73a92f3fdec0",
       "opcional": true,
       "nota": "Modelo RNNoise para o filtro arnndn do FFmpeg (uso manual; nenhum script atual usa)"
     }

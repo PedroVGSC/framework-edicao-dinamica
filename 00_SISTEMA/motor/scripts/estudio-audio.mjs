@@ -63,6 +63,7 @@ log('medindo a voz…');
 const g0 = medirGeral(voz);
 const b0 = medirFaixas(voz);
 const r0 = ruidoPausas(voz);
+if (r0.db == null) log('AVISO: nenhuma pausa abaixo de -40 dB com mais de 0,6 s: ruído não medido, nenhuma redução de ruído entra (gravação muito ruidosa ou fala sem pausas)');
 log('medindo a referência…');
 const refWav = path.join(tmp, 'referencia.wav');
 ff(['-loglevel', 'error', '-y', '-i', REF, '-vn', '-ac', '1', '-ar', '48000', '-c:a', 'pcm_s24le', refWav]);

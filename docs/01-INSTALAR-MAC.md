@@ -90,5 +90,6 @@ O `deep-filter` do Mac só é executado depois de o `sha256` do arquivo baixado 
 | `npm ci` falha | apague `00_SISTEMA/motor/node_modules` e rode o instalador de novo. Nunca `npm update` |
 | Mac dorme no meio do render | `cd 00_SISTEMA/motor && caffeinate -dimsu node scripts/vez.mjs node scripts/render.mjs <proj>` ou peça ao Claude para manter acordado |
 | Durante o `npm ci` aparece `install scripts blocked ... esbuild` (npm 12) | é esperado: o esbuild usa o binário do pacote opcional da plataforma e o render funciona; não precisa aprovar nada |
+| Transcrição muito lenta | não rode duas transcrições ao mesmo tempo (ex.: `assistir.mjs` com um `transcrever.mjs` rodando). Num Apple Silicon de 10 núcleos, 12 s de áudio levaram 50 s sozinhos e ~18 min com outra transcrição em paralelo; se o `transcrever.mjs` ficar lento, use `--paralelo 1` |
 
 O `yt-dlp` do Homebrew traz o Python como dependência dele; o motor não usa.
