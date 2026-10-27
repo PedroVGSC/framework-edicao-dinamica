@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instalador do Framework de Edição Dinâmica para macOS (Apple Silicon ou Intel). Equivalente do instalar.ps1.
+# Instalador do Framework de Edição Dinâmica para macOS (testado em Apple Silicon; Intel não testado). Equivalente do instalar.ps1.
 # Pode rodar quantas vezes quiser: o que já está certo é pulado.
 # Uso (na raiz do repositório):  bash 00_SISTEMA/instalacao/instalar.sh [--sem-opcionais] [--instalar-homebrew]
 set -u

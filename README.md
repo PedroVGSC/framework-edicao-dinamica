@@ -6,7 +6,7 @@ Por baixo há um motor em [Remotion](https://www.remotion.dev) (vídeo feito por
 
 > Funciona no **Windows 10/11** e no **macOS**. No Mac, só o Apple Silicon com macOS 27 foi testado; Mac Intel e versões anteriores do macOS não foram testados (guia: [docs/01-INSTALAR-MAC.md](docs/01-INSTALAR-MAC.md)). Linux ainda não: veja [docs/07-LINUX.md](docs/07-LINUX.md).
 
-> **Versão beta (2026-10-23).** Os 4 formatos vêm de um motor em produção, mas esta edição pública (instalador, efeitos sonoros substitutos e regressões a partir do `pilotos.json`) ainda não foi testada numa máquina limpa. Encontrou um problema? Abra uma *issue*.
+> **Versão beta (2026-10-23).** Os 4 formatos vêm de um motor em produção, mas esta edição pública (instalador, efeitos sonoros substitutos e regressões a partir do `pilotos.json`) foi testada do zero num clone limpo só no macOS (Apple Silicon, macOS 27, com Homebrew, Node e FFmpeg já presentes). Ainda não testados: Windows limpo, Mac sem Homebrew e Mac Intel. Encontrou um problema? Abra uma *issue*.
 
 ---
 
@@ -52,7 +52,7 @@ Detalhes em [docs/03-IMAGENS-E-BROLL.md](docs/03-IMAGENS-E-BROLL.md).
    (Sem terminal? Use o GitHub Desktop ou peça ao Claude Code. Passo a passo em [docs/01-INSTALAR.md](docs/01-INSTALAR.md).)
 2. **Dê duplo clique em `00_SISTEMA\instalacao\INSTALAR.bat`.** Ele instala Node.js, FFmpeg e os pacotes, baixa os modelos e confere tudo. Leva de 15 a 40 minutos, conforme a internet.
    **No Mac:** na raiz do repositório, rode `bash 00_SISTEMA/instalacao/instalar.sh` (ou dê duplo clique em `00_SISTEMA/instalacao/INSTALAR.command`). Se faltar o Homebrew, ele pergunta `s/N` antes de instalar (ou use `--instalar-homebrew`; sem terminal, só funciona se o `sudo` não pedir senha; com terminal, a senha do Mac é pedida pelo instalador do Homebrew). Passo a passo e problemas comuns: [docs/01-INSTALAR-MAC.md](docs/01-INSTALAR-MAC.md).
-3. **Preencha o que o instalador abrir no Bloco de Notas:** as chaves de API (opcionais, `.env`) e a sua marca (`marca.json`). No Mac o instalador não abre nada: abra o `.env` e o `marca.json` você mesmo com `open -e 00_SISTEMA/motor/.env` e `open -e 02_BIBLIOTECA/kit/marca/marca.json`. No fim aparece uma tabela OK/FALTA.
+3. **Preencha o que o instalador abrir no Bloco de Notas:** as chaves de API (opcionais, `.env`) e a sua marca (`marca.json`). No Mac o instalador não abre nada: abra o `.env` e o `marca.json` você mesmo com `open -e 00_SISTEMA/motor/.env` e `open -e 02_BIBLIOTECA/kit/marca/marca.json`. No fim aparece uma tabela OK/AVISO/FALTA.
 
 ## Como usar (3 passos)
 

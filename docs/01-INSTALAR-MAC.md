@@ -1,6 +1,6 @@
 # 01 - Instalar no macOS
 
-Equivalente do [01-INSTALAR.md](01-INSTALAR.md) (Windows) para **macOS** (Apple Silicon ou Intel). Tudo o mais (fluxo, formatos, regras) é igual.
+Equivalente do [01-INSTALAR.md](01-INSTALAR.md) (Windows) para **macOS** (testado em Apple Silicon; Intel não testado). Tudo o mais (fluxo, formatos, regras) é igual.
 
 ## Antes de começar
 
@@ -89,5 +89,6 @@ O `deep-filter` do Mac só é executado depois de o `sha256` do arquivo baixado 
 | FFmpeg sem filtro `whisper` | `brew reinstall ffmpeg` e confira com `ffmpeg -hide_banner -filters \| grep whisper` |
 | `npm ci` falha | apague `00_SISTEMA/motor/node_modules` e rode o instalador de novo. Nunca `npm update` |
 | Mac dorme no meio do render | `cd 00_SISTEMA/motor && caffeinate -dimsu node scripts/vez.mjs node scripts/render.mjs <proj>` ou peça ao Claude para manter acordado |
+| Durante o `npm ci` aparece `install scripts blocked ... esbuild` (npm 12) | é esperado: o esbuild usa o binário do pacote opcional da plataforma e o render funciona; não precisa aprovar nada |
 
 O `yt-dlp` do Homebrew traz o Python como dependência dele; o motor não usa.
